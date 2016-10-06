@@ -1,76 +1,82 @@
 //
 //  ViewController.swift
-//  Piker files
+//  upload music
 //
-//  Created by BioS on 30/09/2016.
+//  Created by BioS on 03/10/2016.
 //  Copyright © 2016 BioS. All rights reserved.
 //
 
 import UIKit
+import MediaPlayer
 import Alamofire
-import AVFoundation
 
-class ViewController: UIViewController,UIImagePickerControllerDelegate,UINavigationControllerDelegate{
+class ViewController: UIViewController,MPMediaPickerControllerDelegate {
 
-    @IBOutlet weak var ui_progressBar: UIProgressView!
-    @IBOutlet weak var ui_image: UIImageView!
     
-    var image:UIImage?
-    
-    var apiURL:String = "http://192.168.8.102:3000/upload"
-    var imageURlOriginale:URL?
+    var mediaPiker:MPMediaPickerController!
+    var player:MPMusicPlayerController!
+    var urlApi:String = "http://192.168.8.104:3000/upload"
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+        
+        
     }
 
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
     }
-   
-    @IBAction func SendToServerBTn(_ sender: AnyObject) {
-        
-        let imageData = UIImagePNGRepresentation(image!)
-        
-       Alamofire.upload(multipartFormData: { (multipart) in
-        multipart.append(imageData!, withName: "myFile", fileName: "iphone", mimeType: "image/jpg")
-       }, to: apiURL) { (encodingResult) in
-            
-                print(encodingResult)
-            
-        }
-    }
-    
-    
-    
-    @IBAction func imagePiker(_ sender: AnyObject) {
-        let imagePiker = UIImagePickerController()
-        imagePiker.delegate = self
-        self.present(imagePiker, animated: true, completion: nil)
-    }
-    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [String : Any]) {
-        print(info)
-        if let imgURl = info[UIImagePickerControllerReferenceURL] as? URL {
-            imageURlOriginale = imgURl
-        }
-        if let imgPiked = info[UIImagePickerControllerOriginalImage] as? UIImage {
-            
-            image = imgPiked
-            
-          
-            self.ui_image.image = imgPiked
-            
-            
 
-
+    @IBAction func pickedSound(_ sender: AnyObject) {
+        mediaPiker = MPMediaPickerController(mediaTypes: MPMediaType.anyVideo)
+        mediaPiker.allowsPickingMultipleItems = false
+        mediaPiker.delegate = self
+        
+        self.present(mediaPiker, animated: true, completion: nil)
+    }
+    func mediaPicker(_ mediaPicker: MPMediaPickerController, didPickMediaItems mediaItemCollection: MPMediaItemCollection) {
+        print(mediaItemCollection.items)
+        var dd:MPMediaItem = mediaItemCollection.items[0] as MPMediaItem
+        
+        print(dd.value(forProperty: MPMediaItemPropertyAssetURL))
+        let url = dd.value(forProperty: MPMediaItemPropertyAssetURL) as! URL
+        print(url.relativePath)
+        print("\n ************")
+        
+        do {
+            let data:Data = try Data(contentsOf: url, options: [])
+        } catch {
+            print(error)
         }
+         
+      
+        player = MPMusicPlayerController.applicationMusicPlayer()
+        player.setQueue(with: mediaItemCollection)
+        //print(player)
+        
+        self.dismiss(animated: true, completion: nil)
+        
+    }
+    func mediaPickerDidCancel(_ mediaPicker: MPMediaPickerController) {
         self.dismiss(animated: true, completion: nil)
     }
-    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
-      self.dismiss(animated: true, completion: nil)
+
+    @IBAction func playMusic(_ sender: AnyObject) {
+        //player.play()
+        self.player?.play()
     }
-
-
+    
+    func uplaod(toApi zicData:Data) {
+        Alamofire
+        .upload(multipartFormData: { (multipart) in
+            multipart.append(zicData, withName: "myFile", fileName: "music", mimeType: "music/audio")
+            }, to: urlApi) { (encodingResult) in
+                //print(encodingResult)
+        }
+        
+    }
 }
+
+
 
